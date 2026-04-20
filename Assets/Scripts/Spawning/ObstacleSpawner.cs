@@ -10,12 +10,16 @@ public class ObstacleSpawner : MonoBehaviour
     private const float DESPAWN_BEHIND = 30f;
     private const int CLEAR_START_SEGS = 2;
 
+    [Header("Monedas")]
+    [Tooltip("Separación entre monedas de una misma fila")]
+    public float coinSpacing = 1.8f;
+
     private class Segment
     {
         public float startZ;
         public float endZ;
         public GameObject ground;
-        public readonly List<GameObject> objects = new();
+        public readonly List<GameObject> obstacles = new(); // solo obstáculos, sin monedas
     }
 
     private readonly List<Segment> _active = new();
@@ -55,13 +59,12 @@ public class ObstacleSpawner : MonoBehaviour
         if (_segCount >= CLEAR_START_SEGS)
         {
             SpawnObstacleRow(seg, startZ + SEGMENT_LEN * 0.5f);
-            SpawnCoins(seg, startZ);
+            SpawnCoins(startZ); // las monedas ya no se guardan en el segmento
         }
 
         _active.Add(seg);
     }
 
-    // Pesos: 0=Ninguno 1=Normal 2=Doble 3=BarreraTotal 4=BarreraParcial 5=ComboMusicoMuro
     private void SpawnObstacleRow(Segment seg, float z)
     {
         int roll = WeightedRandom(new[] { 20, 28, 18, 14, 12, 8 });
@@ -70,84 +73,87 @@ public class ObstacleSpawner : MonoBehaviour
         {
             case 0: break;
 
-            case 1: // Obstáculo normal — 1 carril
+            case 1:
                 {
                     int lane = Random.Range(0, 3);
                     var obs = SpawnPool.Instance.GetNormalObstacle();
                     obs.transform.position = new Vector3(SpawnPool.Lanes[lane], 1.1f, z);
-                    seg.objects.Add(obs);
+                    seg.obstacles.Add(obs);
                     break;
                 }
 
-            case 2: // Obstáculo doble — 2 carriles naranja
+            case 2:
                 {
                     var pair = SpawnPool.DoubleLanePairs[Random.Range(0, SpawnPool.DoubleLanePairs.Length)];
                     var obs = SpawnPool.Instance.GetDoubleObstacle(pair.laneA, pair.laneB);
                     obs.transform.position = new Vector3(0f, 1.1f, z);
-                    seg.objects.Add(obs);
+                    seg.obstacles.Add(obs);
                     break;
                 }
 
-            case 3: // Barrera musical total — 3 carriles
+            case 3:
                 {
                     int track = Random.Range(0, 3);
                     var bar = SpawnPool.Instance.GetFullBarrier();
                     bar.transform.position = new Vector3(0f, 1.4f, z);
                     bar.GetComponent<MusicBarrierFull>().Configure(track);
-                    seg.objects.Add(bar);
+                    seg.obstacles.Add(bar);
                     break;
                 }
 
-            case 4: // Barrera musical parcial — 1 carril libre
+            case 4:
                 {
                     int lane = Random.Range(0, 3);
                     int track = Random.Range(0, 3);
                     var bar = SpawnPool.Instance.GetPartialBarrier();
                     bar.transform.position = new Vector3(SpawnPool.Lanes[lane], 1.4f, z);
                     bar.GetComponent<MusicBarrierPartial>().Configure(track);
-                    seg.objects.Add(bar);
+                    seg.obstacles.Add(bar);
                     break;
                 }
 
-            case 5: // COMBO — barrera musical en 1 carril + muros normales en los otros 2
+            case 5:
                 {
-                    // Elegimos en qué carril va la barrera musical
                     int musicLane = Random.Range(0, 3);
                     int track = Random.Range(0, 3);
-
                     var bar = SpawnPool.Instance.GetPartialBarrier();
                     bar.transform.position = new Vector3(SpawnPool.Lanes[musicLane], 1.4f, z);
                     bar.GetComponent<MusicBarrierPartial>().Configure(track);
-                    seg.objects.Add(bar);
+                    seg.obstacles.Add(bar);
 
-                    // Los otros dos carriles se tapan con obstáculos normales
                     for (int lane = 0; lane < 3; lane++)
                     {
                         if (lane == musicLane) continue;
                         var wall = SpawnPool.Instance.GetNormalObstacle();
                         wall.transform.position = new Vector3(SpawnPool.Lanes[lane], 1.1f, z);
-                        seg.objects.Add(wall);
+                        seg.obstacles.Add(wall);
                     }
-
-                    Debug.Log($"[Spawner] Combo generado — barrera musical en carril {musicLane}, muros en los demás");
                     break;
                 }
         }
     }
 
-    private void SpawnCoins(Segment seg, float startZ)
+    private void SpawnCoins(float startZ)
     {
-        float[] coinZ = { startZ + SEGMENT_LEN * 0.3f, startZ + SEGMENT_LEN * 0.7f };
-        foreach (float cz in coinZ)
+        // Las monedas NO se guardan en el segmento — se reciclan solas desde Coin.cs
+        int rowCount = Random.Range(1, 3);
+        float[] rowPositions = { startZ + SEGMENT_LEN * 0.25f, startZ + SEGMENT_LEN * 0.65f };
+
+        for (int row = 0; row < rowCount; row++)
         {
-            if (Random.value < 0.5f) continue;
-            int laneCount = Random.Range(1, 4);
-            int[] lanes = ShuffleLanes();
-            for (int i = 0; i < laneCount; i++)
+            if (Random.value < 0.4f) continue;
+
+            int lane = Random.Range(0, 3);
+            int coinCount = Random.Range(3, 6);
+            float centerZ = rowPositions[row];
+            float totalLen = (coinCount - 1) * coinSpacing;
+            float startZ2 = centerZ - totalLen * 0.5f;
+
+            for (int i = 0; i < coinCount; i++)
             {
                 var coin = SpawnPool.Instance.GetCoin();
-                coin.transform.position = new Vector3(SpawnPool.Lanes[lanes[i]], 1f, cz);
-                seg.objects.Add(coin);
+                float z = startZ2 + i * coinSpacing;
+                coin.transform.position = new Vector3(SpawnPool.Lanes[lane], 1f, z);
             }
         }
     }
@@ -167,7 +173,8 @@ public class ObstacleSpawner : MonoBehaviour
         if (seg.ground != null)
             SpawnPool.Instance.ReturnGround(seg.ground);
 
-        foreach (var obj in seg.objects)
+        // Solo recicla obstáculos, las monedas se manejan solas
+        foreach (var obj in seg.obstacles)
         {
             if (obj == null) continue;
             if (obj.name == "DoubleObstacle")
@@ -178,10 +185,8 @@ public class ObstacleSpawner : MonoBehaviour
                 SpawnPool.Instance.ReturnFullBarrier(obj);
             else if (obj.TryGetComponent<MusicBarrierPartial>(out _))
                 SpawnPool.Instance.ReturnPartialBarrier(obj);
-            else if (obj.TryGetComponent<Coin>(out _))
-                SpawnPool.Instance.ReturnCoin(obj);
         }
-        seg.objects.Clear();
+        seg.obstacles.Clear();
     }
 
     private static int WeightedRandom(int[] weights)
@@ -196,16 +201,5 @@ public class ObstacleSpawner : MonoBehaviour
             if (r < cumulative) return i;
         }
         return weights.Length - 1;
-    }
-
-    private static int[] ShuffleLanes()
-    {
-        int[] arr = { 0, 1, 2 };
-        for (int i = arr.Length - 1; i > 0; i--)
-        {
-            int j = Random.Range(0, i + 1);
-            (arr[i], arr[j]) = (arr[j], arr[i]);
-        }
-        return arr;
     }
 }

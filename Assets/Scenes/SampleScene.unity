@@ -1266,6 +1266,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ObstacleSpawner
   player: {fileID: 1310663432}
+  coinSpacing: 1.8
 --- !u!4 &784866338
 Transform:
   m_ObjectHideFlags: 0
@@ -2065,14 +2066,14 @@ RectTransform:
   m_GameObject: {fileID: 1636309814}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 2.51, y: 1.51, z: 2.51}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1352056500}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 1}
   m_AnchorMax: {x: 0.5, y: 1}
-  m_AnchoredPosition: {x: 28.75972, y: -22.297302}
+  m_AnchoredPosition: {x: 1, y: 0}
   m_SizeDelta: {x: 1888.4812, y: 93.405}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1636309816
