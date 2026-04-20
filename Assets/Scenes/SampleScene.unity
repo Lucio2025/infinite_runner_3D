@@ -1509,9 +1509,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7a0973c9f8a82a742b73223c18ec1c38, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerController
-  baseSpeed: 11
-  speedIncreaseRate: 0.8
-  speedIncreaseInterval: 11
+  baseSpeed: 13
+  speedIncreaseRate: 0.9
+  speedIncreaseInterval: 13
   laneSwitchSpeed: 8
 --- !u!54 &1310663435
 Rigidbody:
@@ -1588,7 +1588,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: c40ab1d0d60da144383d3de7cb9fcfed, type: 2}
+  - {fileID: 2100000, guid: b99d7fb2254bd124b83473a373ecd937, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
