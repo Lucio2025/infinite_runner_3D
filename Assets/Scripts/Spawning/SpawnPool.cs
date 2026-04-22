@@ -100,7 +100,8 @@ public class SpawnPool : MonoBehaviour
     private GameObject CreateDoubleObstacle()
     {
         var root = new GameObject("DoubleObstacle");
-        root.AddComponent<NormalObstacle>();
+        // Sin NormalObstacle en el raíz — cada bloque hijo maneja su propia colisión
+
         for (int i = 0; i < 2; i++)
         {
             var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
@@ -109,11 +110,15 @@ public class SpawnPool : MonoBehaviour
             cube.transform.localScale = new Vector3(1.8f, 2.2f, 1f);
             cube.GetComponent<Renderer>().sharedMaterial = _doubleObsMat;
             cube.GetComponent<BoxCollider>().isTrigger = true;
+            // NormalObstacle en cada bloque para que detecte la colisión correctamente
+            cube.AddComponent<NormalObstacle>();
         }
+
         root.SetActive(false);
         root.transform.SetParent(transform);
         return root;
     }
+
     public GameObject GetDoubleObstacle(int laneA, int laneB)
     {
         var go = Fetch(_doubleObsPool, CreateDoubleObstacle);
